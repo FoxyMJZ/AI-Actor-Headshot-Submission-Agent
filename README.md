@@ -38,9 +38,11 @@ Keywords – text blob of keywords (comma/semicolon separated)
 
 ### 🖼 Google Sheets Archetype Setup
 
+Tab 1
 ![Workflow Screenshot](Google-Sheets-Setup.png)
 
-
+Tab 2
+![Workflow Screenshot](Google-Sheets-Setup-2.png)
 
 #### How to format the three “array” fields (Essence / Roles / Keywords):
 
