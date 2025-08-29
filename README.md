@@ -36,6 +36,12 @@ ArchetypeSubtypeEssence – text blob of key phrases (comma/semicolon separated)
 Best_for_Roles – text blob of role phrases (comma/semicolon separated)
 Keywords – text blob of keywords (comma/semicolon separated)
 
+### 🖼 Google Sheets Archetype Setup
+
+![Workflow Screenshot](Google-Sheets-Setup.png)
+
+
+
 #### How to format the three “array” fields (Essence / Roles / Keywords):
 
 Put short phrases separated by commas or semicolons in a single cell.
