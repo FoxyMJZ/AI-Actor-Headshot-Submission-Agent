@@ -19,7 +19,12 @@ This workflow is built in **n8n** and automates the process of parsing a casting
 2. In the workflow editor, click the **three-dot menu (⋮)** → **Import from File**.  
 3. Upload the file: `AI-Archetype-Identifier.json` from this repo.  
 4. Add your API keys (OpenAI, Google Sheets, etc.) inside n8n’s **Credentials** section.  
-5. Click **Execute Workflow** to run the agent and see your top 3 headshot matches. 
+5. Click **Execute Workflow** to run the agent and see your top 3 headshot matches.
+
+## 🖼 Workflow Overview
+
+![Workflow Screenshot](Workflow-diagram.png)
+
 
 ### Setting up Google Sheets for workflow’s Build Catalog node
 
