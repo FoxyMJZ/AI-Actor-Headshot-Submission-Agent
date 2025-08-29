@@ -1,13 +1,25 @@
-# AI-Actor-Headshot-Submission-Agent
-Increase actor's casting call backs by picking the right headshot for the right role.
+# AI Actor Headshot Submission Agent
 
-## How to Use
+Increase actor's casting call backs by picking the right headshot for the right role.  
+This workflow is built in **n8n** and automates the process of parsing a casting role description, mapping it to a curated Google Sheets headshot database, and returning the **Top 3 best-fit headshots** for submission.
 
-1. Open [n8n](https://n8n.io).
-2. In the workflow editor, click the **three-dot menu (⋮)** → **Import from File**.
-3. Upload the file: `AI-Archetype-Identifier.json` from this repo.
-4. Add your API keys (OpenAI, Google Sheets, etc.) inside n8n’s **Credentials** section.
-5. Click **Execute Workflow** to run the agent and see your top 3 headshot matches.
+---
+
+## ✨ Features
+- **Role parsing** → Converts casting breakdown text into structured attributes.  
+- **Archetype mapping** → Matches against a curated actor headshot map in Google Sheets.  
+- **Weighted scoring** → Ranks by Essence (45%), Roles (20%), Keywords (20%), Archetype (10%), Subtype (5%).  
+- **Top 3 output** → Returns the 3 most suitable looks with their IDs.  
+
+---
+
+## 🚀 How to Use
+
+1. Open [n8n](https://n8n.io).  
+2. In the workflow editor, click the **three-dot menu (⋮)** → **Import from File**.  
+3. Upload the file: `AI-Archetype-Identifier.json` from this repo.  
+4. Add your API keys (OpenAI, Google Sheets, etc.) inside n8n’s **Credentials** section.  
+5. Click **Execute Workflow** to run the agent and see your top 3 headshot matches. 
 
 ### Setting up Google Sheets for workflow’s Build Catalog node
 
