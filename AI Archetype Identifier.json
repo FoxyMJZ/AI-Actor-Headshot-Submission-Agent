@@ -1,0 +1,272 @@
+{
+  "name": "AI Archetype Identifier",
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You extract structured JSON from casting descriptions for archetype matching.\nInput will be in $json.raw_text.\nReturn ONLY valid JSON—no prose, no markdown.\n\n",
+              "role": "system"
+            },
+            {
+              "content": "=Parse the following casting description into five fields for matching.\n\nTEXT:\n{{ $json.role_description || $json.description || $json.text }}\n\nReturn ONLY JSON with this exact shape:\n{\n  \"archetype\": \"string\",\n  \"subtype\": \"string\",\n  \"archetype_subtype_essence\": [\"short key phrase\", \"...\"],\n  \"best_for_roles\": [\"role phrase\", \"...\"],\n  \"keywords\": [\"word or 2-3 word phrase\", \"...\"]\n}\n\nGuidelines:\n- Be concise; extract nouns/adjectives/2–3 word phrases.\n- 8–15 items for archetype_subtype_essence; 5–12 for best_for_roles; 10–20 for keywords.\n- It’s OK to infer obvious signals from the text (e.g., “intelligent”, “logical”, “overwhelmed”, “moral conflict”) when implied.\n- If a field is unknown, use \"\" for strings and [] for arrays.\n- No comments or trailing text—JSON only.\n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -16,
+        -288
+      ],
+      "id": "db0df286-6670-4218-b337-7be38c8ee65c",
+      "name": "Parse Role",
+      "credentials": {
+        "openAiApi": {
+          "id": "lfqzcGtmo8Reiq2X",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TOeGRW30SWK2qGoeDTeVyvvXod1s_qlE_PLr6AKgnDE",
+          "mode": "list",
+          "cachedResultName": "MJZ Archetype Map",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TOeGRW30SWK2qGoeDTeVyvvXod1s_qlE_PLr6AKgnDE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Archetype Description",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TOeGRW30SWK2qGoeDTeVyvvXod1s_qlE_PLr6AKgnDE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        48,
+        -96
+      ],
+      "id": "093b7336-9815-489b-bb63-724603736988",
+      "name": "Read Archetype Map",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cftgfj8OjkparNjl",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": false
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        560,
+        -192
+      ],
+      "id": "18bc9dc9-64c1-480f-9488-5a03324cc4fc",
+      "name": "Merge",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({ role: (typeof $json.message?.content === 'string' ? JSON.parse($json.message.content) : $json.message?.content) }) }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        -288
+      ],
+      "id": "d276332f-33a3-47a0-9f8a-aa44b2b5bc0f",
+      "name": "Wrap Role"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Collect all sheet rows from input and normalize into a single \"catalog\" array.\nrows = [item[\"json\"] for item in _input.all()]\n\ndef s(v):\n    return str(v or \"\").strip()\n\ncatalog = []\nfor r in rows:\n    catalog.append({\n        \"Headshot_ID\": s(r.get(\"Headshot_ID\") or r.get(\"headshot_id\")),\n        \"Archetype\": s(r.get(\"Archetype\")),\n        \"Subtype\": s(r.get(\"Subtype\")),\n        \"ArchetypeSubtypeEssence\": s(r.get(\"ArchetypeSubtypeEssence\") or r.get(\"Archetype_Subtype_Essence\")),\n        \"Best_for_Roles\": s(r.get(\"Best_for_Roles\") or r.get(\"BestForRoles\")),\n        \"Keywords\": s(r.get(\"Keywords\")),\n    })\n\nreturn [{\"json\": {\"catalog\": catalog}}]\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -96
+      ],
+      "id": "a1ef6cb2-277e-40fe-93c4-ef9571dedcca",
+      "name": "Build Catalog"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { catalog, role } = $json;\n\n// ---- helpers ----\nfunction normStr(s) {\n  return String(s ?? \"\")\n    .toLowerCase()\n    .replace(/[\\u2018\\u2019]/g,\"'\")\n    .replace(/[^a-z0-9\\s\\-]/g,\" \")\n    .replace(/\\s+/g,\" \")\n    .trim();\n}\nfunction tokens(s){ return normStr(s).split(\" \").filter(t=>t.length>1); }\nfunction dice(aTokens,bTokens){\n  const A=new Set(aTokens), B=new Set(bTokens);\n  if(!A.size && !B.size) return 1;\n  if(!A.size || !B.size) return 0;\n  let inter=0; for(const t of A) if(B.has(t)) inter++;\n  return (2*inter)/(A.size+B.size);\n}\nfunction phraseHitRatio(hay, list){\n  if(!Array.isArray(list)||!list.length) return 0;\n  const hs=normStr(hay); let hit=0, tot=0;\n  for(const p of list){ const pp=normStr(p); if(!pp) continue; tot++; if(hs.includes(pp)) hit++; }\n  return tot? hit/tot : 0;\n}\nfunction scoreField(rowText, roleStrOrList){\n  const rowStr = String(rowText ?? \"\");\n  let exact=0, overlap=0;\n  if(Array.isArray(roleStrOrList)){\n    exact = phraseHitRatio(rowStr, roleStrOrList);\n    overlap = dice(tokens(rowStr), tokens(roleStrOrList.join(\" \")));\n  } else {\n    const r = String(roleStrOrList ?? \"\").trim();\n    exact = r ? (normStr(rowStr).includes(normStr(r)) ? 1 : 0) : 0;\n    overlap = dice(tokens(rowStr), tokens(r));\n  }\n  return 0.4*exact + 0.6*overlap; // blend\n}\n\n// ---- role fields ----\nconst rf = {\n  archetype: role.archetype || \"\",\n  subtype: role.subtype || \"\",\n  essence: Array.isArray(role.archetype_subtype_essence) ? role.archetype_subtype_essence : [],\n  bestFor: Array.isArray(role.best_for_roles) ? role.best_for_roles : [],\n  keywords: Array.isArray(role.keywords) ? role.keywords : [],\n};\n\n// ---- weights ----\nconst W = { archetype:0.10, subtype:0.05, essence:0.45, bestFor:0.20, keywords:0.20 };\n\n// ---- score all rows ----\nconst scored = catalog.map(r => {\n  const sA = scoreField(r.Archetype, rf.archetype);\n  const sS = scoreField(r.Subtype, rf.subtype);\n  const sE = scoreField(r.ArchetypeSubtypeEssence, rf.essence);\n  const sB = scoreField(r.Best_for_Roles, rf.bestFor);\n  const sK = scoreField(r.Keywords, rf.keywords);\n  const total = W.archetype*sA + W.subtype*sS + W.essence*sE + W.bestFor*sB + W.keywords*sK;\n  return {\n    Headshot_ID: r.Headshot_ID,\n    Archetype: r.Archetype,\n    Subtype: r.Subtype,\n    score_breakdown: {\n      archetype:+sA.toFixed(4),\n      subtype:+sS.toFixed(4),\n      essence:+sE.toFixed(4),\n      best_for_roles:+sB.toFixed(4),\n      keywords:+sK.toFixed(4),\n    },\n    score_total:+total.toFixed(6),\n  };\n});\n\nscored.sort((a,b)=> b.score_total - a.score_total);\nconst top3 = scored.slice(0,3);\nconst top3_ids = top3.map(x=>x.Headshot_ID);\n\nreturn [{ json: { role: rf, top3, top3_ids } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -192
+      ],
+      "id": "3162f092-6b52-4603-b7c6-42fbf360203c",
+      "name": "Top 3 Headshots"
+    },
+    {
+      "parameters": {
+        "formTitle": "role_description",
+        "formDescription": "Paste role description here",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Paste role description here:",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        -192
+      ],
+      "id": "9aada4e4-e6cc-403c-81ae-704a7395d33b",
+      "name": "On form submission",
+      "webhookId": "6d642a32-e4c3-4e0b-a97e-7adacd09ed59"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Parse Role": {
+      "main": [
+        [
+          {
+            "node": "Wrap Role",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Archetype Map": {
+      "main": [
+        [
+          {
+            "node": "Build Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Catalog": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap Role": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Top 3 Headshots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Parse Role",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Archetype Map",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1
+  },
+  "versionId": "10eaf8e2-e91b-4c80-95af-b0f6b33a1362",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f27dab3b17cde8f963abe678509e4d8f26c0a420e77331524085d8b3a0f6f5bd"
+  },
+  "id": "B9HmJ8HZqHpmgI8u",
+  "tags": [
+    {
+      "name": "headshots",
+      "id": "elnAEu8mYkpU68WK",
+      "createdAt": "2025-09-01T16:45:32.549Z",
+      "updatedAt": "2025-09-01T16:45:32.549Z"
+    },
+    {
+      "name": "actor",
+      "id": "Ay6gghgzz8yim418",
+      "createdAt": "2025-09-01T16:45:36.711Z",
+      "updatedAt": "2025-09-01T16:45:36.711Z"
+    },
+    {
+      "name": "callbacks",
+      "id": "qlr4am8cc0cwoblH",
+      "createdAt": "2025-09-01T16:45:44.408Z",
+      "updatedAt": "2025-09-01T16:45:44.408Z"
+    },
+    {
+      "name": "auditions",
+      "id": "MZiHjkIhXgWtrGUW",
+      "createdAt": "2025-09-01T16:45:49.186Z",
+      "updatedAt": "2025-09-01T16:45:49.186Z"
+    }
+  ]
+}
