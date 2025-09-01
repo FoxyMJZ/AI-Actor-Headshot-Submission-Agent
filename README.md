@@ -23,7 +23,7 @@ This workflow is built in **n8n** and automates the process of parsing a casting
 
 ## 🖼 Workflow Overview
 
-![Workflow Screenshot](Workflow-diagram.png)
+![Workflow Screenshot](workflow-diagram.png)
 
 
 ### Setting up Google Sheets for workflow’s Build Catalog node
